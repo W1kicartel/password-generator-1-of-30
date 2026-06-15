@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Generator</title>
+<style>
+  :root{--bg:#0f1226;--card:#1a1f3a;--accent:#6c5ce7;--accent2:#00d2a8;--text:#e9ecff;--muted:#9aa0c7}
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 600px at 50% -10%,#23284d,var(--bg));color:var(--text)}
+  .card{background:var(--card);width:min(440px,92vw);padding:28px;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  h1{margin:0 0 4px;font-size:22px}
+  p.sub{margin:0 0 20px;color:var(--muted);font-size:13px}
+  .out{display:flex;gap:8px;margin-bottom:18px}
+  .out input{flex:1;background:#0e1230;border:1px solid #2c3260;color:var(--text);border-radius:12px;padding:14px;font-size:16px;font-family:ui-monospace,monospace;letter-spacing:.5px}
+  button{cursor:pointer;border:0;border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;color:#fff;background:var(--accent);transition:.15s transform}
+  button:active{transform:scale(.96)}
+  .copy{background:var(--accent2);color:#06231d}
+  .row{display:flex;align-items:center;justify-content:space-between;margin:12px 0;font-size:14px}
+  input[type=range]{width:140px;accent-color:var(--accent)}
+  input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent2)}
+  .meter{height:8px;border-radius:6px;background:#0e1230;overflow:hidden;margin:6px 0 16px}
+  .meter span{display:block;height:100%;width:0;transition:.25s}
+  .len{color:var(--accent2);font-weight:700}
+  .gen{width:100%;margin-top:8px;background:linear-gradient(90deg,var(--accent),#8e7bff)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent2);color:#06231d;padding:10px 18px;border-radius:10px;font-weight:600;opacity:0;transition:.25s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔐 Password Generator</h1>
+    <p class="sub">Genera password sicure, tutto offline nel tuo browser.</p>
+    <div class="out">
+      <input id="pw" readonly value="">
+      <button class="copy" id="copy">Copia</button>
+    </div>
+    <div class="meter"><span id="bar"></span></div>
+    <div class="row"><label>Lunghezza: <span class="len" id="lenLabel">16</span></label><input type="range" id="len" min="6" max="40" value="16"></div>
+    <div class="row"><label>Maiuscole (A-Z)</label><input type="checkbox" id="upper" checked></div>
+    <div class="row"><label>Minuscole (a-z)</label><input type="checkbox" id="lower" checked></div>
+    <div class="row"><label>Numeri (0-9)</label><input type="checkbox" id="num" checked></div>
+    <div class="row"><label>Simboli (!@#$)</label><input type="checkbox" id="sym" checked></div>
+    <button class="gen" id="gen">Genera nuova password</button>
+  </div>
+  <div class="toast" id="toast">Copiata negli appunti ✓</div>
+<script>
+const sets={upper:"ABCDEFGHIJKLMNOPQRSTUVWXYZ",lower:"abcdefghijklmnopqrstuvwxyz",num:"0123456789",sym:"!@#$%^&*()-_=+[]{};:,.?/"};
+const $=id=>document.getElementById(id);
+function gen(){
+  let pool="",pw="";
+  ["upper","lower","num","sym"].forEach(k=>{if($(k).checked)pool+=sets[k];});
+  if(!pool){pw="seleziona almeno un'opzione";$("pw").value=pw;score(0);return;}
+  const len=+$("len").value, arr=new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  for(let i=0;i<len;i++)pw+=pool[arr[i]%pool.length];
+  $("pw").value=pw; score(strength(pw,pool.length));
+}
+function strength(pw,poolSize){return Math.min(100,Math.round(pw.length*Math.log2(poolSize||1)*1.6));}
+function score(v){const bar=$("bar");bar.style.width=v+"%";bar.style.background=v<40?"#ff5c7c":v<70?"#ffb547":"#00d2a8";}
+function copy(){if(!$("pw").value)return;navigator.clipboard.writeText($("pw").value);const t=$("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1400);}
+$("len").addEventListener("input",()=>{$("lenLabel").textContent=$("len").value;gen();});
+["upper","lower","num","sym"].forEach(k=>$(k).addEventListener("change",gen));
+$("gen").addEventListener("click",gen);$("copy").addEventListener("click",copy);
+gen();
+</script>
+</body>
+</html>
